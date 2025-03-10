@@ -61,6 +61,8 @@ class WC_Check_Payments {
 	 * @param WP_Post $post The post object.
 	 */
 	public function render_meta_box( $post ) {
+		$order_id = $post->ID;
+		echo 'This is the order ID: ' . $order_id;
 		include plugin_dir_path( __FILE__ ) . 'views/html-check-payment-meta-box.php';
 	}
 
