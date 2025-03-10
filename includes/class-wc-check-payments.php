@@ -49,7 +49,7 @@ class WC_Check_Payments {
 			'wc_check_payment',
 			'Check Payment',
 			array( $this, 'render_meta_box' ),
-			array( 'shop_order', 'wc-order' ),
+			'shop_order',
 			'advanced',
 			'high'
 		);
