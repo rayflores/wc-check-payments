@@ -32,8 +32,7 @@ class WC_Check_Payments {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'add_meta_boxes_shop_order', array( $this, 'add_order_meta_box' ) );
-		add_action( 'add_meta_boxes_woocommerce_page_wc-orders', array( $this, 'add_order_meta_box' ) );
+		add_action( 'add_meta_boxes', array( $this, 'add_order_meta_box' ) );
 		add_action( 'wp_ajax_process_check_payment', array( $this, 'process_check_payment' ) );
 
 		$this->config = json_decode( $this->config, true );
