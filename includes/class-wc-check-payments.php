@@ -52,7 +52,7 @@ class WC_Check_Payments {
 			array( $this, 'render_meta_box' ),
 			array( 'shop_order', 'wc-order' ),
 			'advanced',
-			'default'
+			'high'
 		);
 	}
 
