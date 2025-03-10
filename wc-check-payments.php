@@ -45,7 +45,7 @@ class WC_Check_Payments {
 		add_action( 'add_meta_boxes_woocommerce_page_wc-orders', array( $this, 'add_order_meta_box' ) );
 		add_action( 'wp_ajax_process_check_payment', array( $this, 'process_check_payment' ) );
 
-        add_action( 'init', array( $this, 'add_check_payments_cpt' ) );
+		add_action( 'init', array( $this, 'add_check_payments_cpt' ) );
 		$this->config = json_decode( $this->config, true );
 		$this->process_cpts();
 		add_action( 'add_meta_boxes', array( $this, 'add_cpt_meta_boxes' ) );
@@ -101,10 +101,11 @@ class WC_Check_Payments {
 		include plugin_dir_path( __FILE__ ) . 'views/html-check-payments-meta-box.php';
 	}
 
-    /**
-     * Get the Payments
-     */
-    public function payments()
+	/**
+	 * Get the Payments
+	 */
+	public function payments() {
+	}
 
 	/**
 	 * Process the check and save the data.
