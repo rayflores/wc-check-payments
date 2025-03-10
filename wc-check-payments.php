@@ -3,7 +3,7 @@
  * Plugin Name: WC Check Payments
  * Plugin URI: https://rayflores.com
  * Description: A simple plugin to add check payments to WooCommerce.
- * Version: 1.0.7
+ * Version: 1.0.8
  * Author: Ray Flores
  * Author URI: https://rayflores.com
  * License: GPL2
@@ -22,6 +22,8 @@ function wc_activation_hook() {
 	}
 	if ( class_exists( 'WC_Check_Payments' ) ) {
 		$wc_check_payments = WC_Check_Payments::get_instance();
+	} else {
+		error_log( 'WC Check Payments class does not exist.' );
 	}
 }
 register_activation_hook( __FILE__, 'wc_activation_hook' );
