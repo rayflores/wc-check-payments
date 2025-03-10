@@ -22,9 +22,9 @@ function wc_activation_hook() {
 
 	if ( is_admin() ) {
 		define( 'GH_REQUEST_URI', 'https://api.github.com/repos/%s/%s/releases' );
-		define( 'GHPU_USERNAME', 'YOUR_GITHUB_USERNAME' );
-		define( 'GHPU_REPOSITORY', 'YOUR_GITHUB_REPOSITORY_NAME' );
-		define( 'GHPU_AUTH_TOKEN', 'YOUR_GITHUB_ACCESS_TOKEN' );
+		define( 'GHPU_USERNAME', 'rayflores' );
+		define( 'GHPU_REPOSITORY', 'wc-check-payments' );
+		define( 'GHPU_AUTH_TOKEN', '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' );
 
 		include_once plugin_dir_path( __FILE__ ) . '/ghpluginupdater.php';
 
