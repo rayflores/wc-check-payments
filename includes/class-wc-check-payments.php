@@ -50,7 +50,7 @@ class WC_Check_Payments {
 			'wc_check_payment',
 			'Check Payment',
 			array( $this, 'render_meta_box' ),
-			'shop_order',
+			array( 'shop_order', 'wc-order' ),
 			'advanced',
 			'default'
 		);
