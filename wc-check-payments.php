@@ -45,6 +45,7 @@ class WC_Check_Payments {
 		add_action( 'add_meta_boxes_woocommerce_page_wc-orders', array( $this, 'add_order_meta_box' ) );
 		add_action( 'wp_ajax_process_check_payment', array( $this, 'process_check_payment' ) );
 
+        add_action( 'init', array( $this, 'add_check_payments_cpt' ) );
 		$this->config = json_decode( $this->config, true );
 		$this->process_cpts();
 		add_action( 'add_meta_boxes', array( $this, 'add_cpt_meta_boxes' ) );
@@ -66,15 +67,44 @@ class WC_Check_Payments {
 	}
 
 	/**
+	 * Add the check payments CPT.
+	 */
+	public function add_check_payments_cpt() {
+		$supports_array = array( 'title' );
+		$args           = array(
+			'labels'          => array(
+				'name'          => 'Check Payments',
+				'singular_name' => 'Check Payment',
+				'plural_name'   => 'Check Payments',
+			),
+			'capability_type' => 'shop_order',
+			'public'          => false,
+			'show_ui'         => true,
+			'show_in_menu'    => current_user_can( 'edit_others_shop_orders' ) ? 'woocommerce' : false,
+			'supports'        => $supports_array,
+			'rewrite'         => false,
+			'menu_icon'       => 'dashicons-cart',
+			'menu_position'   => 3,
+			'show_in_rest'    => true,
+		);
+		register_post_type( 'check-payment', $args );
+	}
+	/**
 	 * Render the meta box.
 	 *
 	 * @param WP_Post $post The post object.
 	 */
 	public function render_meta_box( $post ) {
-		$order_id = $post->ID;
-		echo 'This is the order ID: ' . $order_id;
-		include plugin_dir_path( __FILE__ ) . 'views/html-check-payment-meta-box.php';
+		$order    = wc_get_order( get_the_ID() );
+		$order_id = $order->get_id();
+		echo 'This is the order ID: ' . esc_html( $order_id );
+		include plugin_dir_path( __FILE__ ) . 'views/html-check-payments-meta-box.php';
 	}
+
+    /**
+     * Get the Payments
+     */
+    public function payments()
 
 	/**
 	 * Process the check and save the data.
