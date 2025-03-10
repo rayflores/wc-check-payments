@@ -21,7 +21,7 @@ function wc_activation_hook() {
 		include_once plugin_dir_path( __FILE__ ) . '/includes/class-wc-check-payments.php';
 	}
 	if ( class_exists( 'WC_Check_Payments' ) ) {
-		$wc_check_payments = WC_Check_Payments::get_instance();
+		return WC_Check_Payments::get_instance();
 	} else {
 		error_log( 'WC Check Payments class does not exist.' );
 	}
