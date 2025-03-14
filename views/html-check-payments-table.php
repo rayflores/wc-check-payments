@@ -7,7 +7,7 @@
 
 if ( $this->payments ) : ?>
 
-<div class="payments-table <?php echo count( $this->payments ) > 3 ? 'has-scrollbar' : ''; ?>">
+<div class="payments-table <?php echo count( $this->payments( get_the_ID() ) ) > 3 ? 'has-scrollbar' : ''; ?>">
 	<table class="widefat striped">
 		<thead>
 			<tr>
@@ -17,17 +17,17 @@ if ( $this->payments ) : ?>
 		</thead>
 		<tbody>
 
-			<?php foreach ( $this->payments as $payment ) : ?>
-
+			<?php foreach ( $this->payments( get_the_ID() ) as $payment ) : ?>
 				<tr>
 					<td>
 						
-						<?php echo esc_html( $payment['date'] ) . ' via: Check #' . esc_html( $payment['check_number'] ); ?>
+						<?php echo esc_html( $payment->check_date ) . ' via: Check #' . esc_html( $payment->check_number ); ?>
 
 					</td>
 					<td class="amount-column">
-
-						<?php echo esc_html( wc_price( $payment['amount'], array( 'currency' => $payment['currency'] ) ) ); ?>
+                        <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscape 
+						echo wc_price( $payment->check_amount );
+						?>
 
 					</td>
 				</tr>
@@ -40,6 +40,6 @@ if ( $this->payments ) : ?>
 
 <?php else : ?>
 
-<div class="check-payments-table-placeholder">Your payments will show up here.</div>
+<div class="payments-table-placeholder">Your payments will show up here.</div>
 
 <?php endif; ?>

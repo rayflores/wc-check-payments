@@ -3,7 +3,7 @@
  * Plugin Name: WC Check Payments
  * Plugin URI: https://rayflores.com
  * Description: A simple plugin to add check payments to WooCommerce.
- * Version: 1.1.2
+ * Version: 1.1.3
  * Author: Ray Flores
  * Author URI: https://rayflores.com
  * License: GPL2
@@ -37,21 +37,98 @@ class WC_Check_Payments {
 	 */
 	private $config = '{"title":"Check Payment Data","description":"All Data about the check payment","prefix":"cp_","domain":"check-payments","class_name":"WC_Check_Payments","post-type":["post"],"context":"normal","priority":"high","cpt":"check-payment","fields":[{"type":"text","label":"Check Number","id":"cp_check-number"},{"type":"date","label":"Check Date","id":"cp_check-date"},{"type":"text","label":"Check Amount","id":"cp_check-amount"}]}';
 
+	/**
+	 * Payments.
+	 *
+	 * @var array
+	 */
+	private $payments = array();
 
 	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		add_action( 'add_meta_boxes_woocommerce_page_wc-orders', array( $this, 'add_order_meta_box' ) );
+		add_action( 'add_meta_boxes_shop_order', array( $this, 'add_order_meta_box' ) );
+
 		add_action( 'wp_ajax_process_check_payment', array( $this, 'process_check_payment' ) );
+
+		add_action( 'woocommerce_order_after_calculate_totals', array( $this, 'update_total_amount' ), 9999, 2 );
+		add_action( 'woocommerce_admin_order_totals_after_total', array( $this, 'display_payments' ), 10, 1 );
 
 		add_action( 'init', array( $this, 'add_check_payments_cpt' ) );
 		$this->config = json_decode( $this->config, true );
 		$this->process_cpts();
 		add_action( 'add_meta_boxes', array( $this, 'add_cpt_meta_boxes' ) );
 		add_action( 'admin_head', array( $this, 'admin_head' ) );
+		add_action( 'save_post_check-payments', array( $this, 'save_post_payments' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'admin_styles_scripts' ) );
 	}
 
+	/**
+	 * Display the payments.
+	 *
+	 * @param WC_Order $order The order.
+	 */
+	public function display_payments( $order_id ) {
+		echo '<tr><td class="label">Check Payments:</td><td width="1%"></td><td class="total"><ul style="margin:0">';
+		$payments = $this->payments( $order_id );
+		if ( ! empty( $payments ) ) {
+			foreach ( $payments as $payment ) {
+				echo '<li style="margin:0"><a href="' . get_edit_post_link( $payment->id ) . '">' . wc_price( $payment->check_amount ) . '</a> (' . $payment->check_date . ')</li>';
+			}
+		}
+	}
+	/**
+	 * Enqueue the scripts.
+	 */
+	public function admin_styles_scripts() {
+		$screen    = get_current_screen();
+		$screen_id = $screen ? $screen->id : '';
+
+		if ( wc_get_page_screen_id( 'shop-order' ) === $screen_id || wc_get_page_screen_id( 'woocommerce_page_wc-orders' ) === $screen_id ) {
+			wp_enqueue_style( 'wc-check-payments', plugin_dir_url( __FILE__ ) . 'assets/css/style.css', array(), filemtime( plugin_dir_path( __FILE__ ) . 'assets/css/style.css' ), 'all' );
+			wp_enqueue_script( 'wc-check-payments', plugin_dir_url( __FILE__ ) . 'assets/js/script.js', array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . 'assets/js/script.js' ), true );
+			wp_localize_script(
+				'wc-check-payments',
+				'wcCP',
+				array(
+					'ajax_url'        => admin_url( 'admin-ajax.php' ),
+					'cpnonce'         => wp_create_nonce( 'wc_check_payment' ),
+					'currency'        => get_woocommerce_currency(),
+					'currency_sumbol' => get_woocommerce_currency_symbol(),
+
+				)
+			);
+		}
+	}
+
+	/**
+	 * Save the payment metadata.
+	 *
+	 * @param int $post_id The post ID.
+	 */
+	public function save_post_payments( $post_id ) {
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+		// Save the metadata.
+		foreach ( $this->config['fields'] as $field ) {
+			switch ( $field['type'] ) {
+				case 'checkbox':
+					update_post_meta( $post_id, $field['id'], isset( $_POST[ $field['id'] ] ) ? $_POST[ $field['id'] ] : '' );
+					break;
+				default:
+					if ( isset( $_POST[ $field['id'] ] ) ) {
+						$sanitized = sanitize_text_field( $_POST[ $field['id'] ] );
+						update_post_meta( $post_id, $field['id'], $sanitized );
+					}
+			}
+		}
+	}
 	/**
 	 * Add the meta box.
 	 */
@@ -91,35 +168,70 @@ class WC_Check_Payments {
 	}
 	/**
 	 * Render the meta box.
-	 *
-	 * @param WP_Post $post The post object.
 	 */
-	public function render_meta_box( $post ) {
+	public function render_meta_box() {
 		$order    = wc_get_order( get_the_ID() );
 		$order_id = $order->get_id();
-		echo 'This is the order ID: ' . esc_html( $order_id );
+		$this->payments( $order_id );
 		include plugin_dir_path( __FILE__ ) . 'views/html-check-payments-meta-box.php';
 	}
 
 	/**
 	 * Get the Payments
 	 */
-	public function payments() {
+	public function payments( $order_id ) {
+		$payments        = get_posts(
+			array(
+				'post_type'   => 'check-payment',
+				'post_status' => 'publish',
+				'numberposts' => -1,
+				'title'       => $order_id,
+				'fields'      => 'ids',
+			)
+		);
+		$payment_objects = array();
+
+		if ( ! empty( $payments ) ) {
+			foreach ( $payments as $payment_id ) {
+				$post_payment          = get_post( $payment_id );
+				$payment               = new stdClass();
+				$payment->id           = $post_payment->ID;
+				$payment->title        = $post_payment->post_title;
+				$payment->check_number = get_post_meta( $payment_id, 'cp_check-number', true );
+				$payment->check_date   = get_post_meta( $payment_id, 'cp_check-date', true );
+				$payment->check_amount = get_post_meta( $payment_id, 'cp_check-amount', true );
+				$payment_objects[]     = $payment;
+			}
+		}
+		$this->payments = $payment_objects;
+		return $this->payments;
+	}
+	/**
+	 * Update new total amount.
+	 */
+	public function update_total_amount( $and_taxes, $order ) {
+		$payments = $this->payments( $order->get_id() );
+		$total    = $order->get_total();
+		$paid     = 0.00;
+		foreach ( $payments as $payment ) {
+			$paid += $payment->check_amount;
+		}
+		$new_total = $total - $paid;
+		if ( $new_total <= 0 ) {
+			$order->set_status( 'completed' );
+		}
+		$order->set_total( $new_total );
+		if ( $new_total > 0 ) {
+			$order->set_status( 'pending' );
+		}
+		$order->save();
 	}
 
 	/**
 	 * Process the check and save the data.
 	 */
 	public function process_check_payment() {
-		if ( ! isset( $_POST['wc_check_payment_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wc_check_payment_nonce'] ) ), 'wc_check_payment' ) ) {
-			return;
-		}
-
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return;
-		}
-
-		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'wc_check_payment' ) ) {
 			return;
 		}
 
@@ -131,17 +243,24 @@ class WC_Check_Payments {
 		$order = wc_get_order( $order_id );
 
 		$check_payment     = array(
-			'post_title'  => $order->get_order_number(),
+			'post_title'  => $order_id,
 			'post_status' => 'publish',
-			'post_type'   => 'check_payment',
+			'post_type'   => 'check-payment',
 		);
 		$new_check_payment = wp_insert_post( $check_payment );
 
-		update_post_meta( $new_check_payment, 'check_number', $check_number );
-		update_post_meta( $new_check_payment, 'check_date', $check_date );
-		update_post_meta( $new_check_payment, 'check_amount', $check_amount );
+		update_post_meta( $new_check_payment, 'cp_check-number', $check_number );
+		update_post_meta( $new_check_payment, 'cp_check-date', $check_date );
+		update_post_meta( $new_check_payment, 'cp_check-amount', $check_amount );
 
 		$order->calculate_totals();
+		$order->save();
+		wp_send_json_success(
+			array(
+				'success' => true,
+				'paid'    => true,
+			)
+		);
 	}
 
 	/**
