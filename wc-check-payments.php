@@ -9,7 +9,8 @@
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: wc-check-payments
- *
+ * GitHub Theme URI: rayflores/wc-check-payments
+ * Primary Branch: main
  * @package WC_Check_Payments
  */
 
@@ -63,6 +64,23 @@ class WC_Check_Payments {
 		add_action( 'admin_head', array( $this, 'admin_head' ) );
 		add_action( 'save_post_check-payments', array( $this, 'save_post_payments' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_styles_scripts' ) );
+
+        if (is_admin()) { // note the use of is_admin() to double check that this is happening in the admin
+            $config = array(
+                'slug' => plugin_basename(__FILE__), // this is the slug of your plugin
+                'proper_folder_name' => 'plugin-name', // this is the name of the folder your plugin lives in
+                'api_url' => 'https://api.github.com/repos/rayflores/wc-check-payments', // the GitHub API url of your GitHub repo
+                'raw_url' => 'https://raw.github.com/rayflores/wc-check-payments/main', // the GitHub raw url of your GitHub repo
+                'github_url' => 'https://github.com/rayflores/wc-check-payments', // the GitHub url of your GitHub repo
+                'zip_url' => 'https://github.com/rayflores/wc-check-payments/zipball/main', // the zip url of the GitHub repo
+                'sslverify' => true, // whether WP should check the validity of the SSL cert when getting an update, see https://github.com/jkudish/WordPress-GitHub-Plugin-Updater/issues/2 and https://github.com/jkudish/WordPress-GitHub-Plugin-Updater/issues/4 for details
+                'requires' => '6.0', // which version of WordPress does your plugin require?
+                'tested' => '6.0', // which version of WordPress is your plugin tested up to?
+                'readme' => 'README.md', // which file to use as the readme for the version number
+                'access_token' => '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', // Access private repositories by authorizing under Plugins > GitHub Updates when this example plugin is installed
+            );
+            new WP_GitHub_Updater($config);
+        }
 	}
 
 	/**
