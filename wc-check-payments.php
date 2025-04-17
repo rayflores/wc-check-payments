@@ -439,17 +439,4 @@ function wc_check_payments() {
 	return WC_Check_Payments::get_instance();
 }
 add_action( 'plugins_loaded', 'wc_check_payments' );
-/**
- * Version check.
- */
-if ( is_admin() ) {
-	define( 'GH_REQUEST_URI', 'https://api.github.com/repos/%s/%s/releases' );
-	define( 'GHPU_USERNAME', 'rayflores' );
-	define( 'GHPU_REPOSITORY', 'wc-check-payments' );
-	define( 'GHPU_AUTH_TOKEN', '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' );
 
-	include_once plugin_dir_path( __FILE__ ) . '/ghpluginupdater.php';
-
-	$updater = new GhPluginUpdater( __FILE__ );
-	$updater->init();
-}
