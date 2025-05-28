@@ -77,7 +77,7 @@ class WC_Check_Payments {
                 'requires' => '6.0', // which version of WordPress does your plugin require?
                 'tested' => '6.0', // which version of WordPress is your plugin tested up to?
                 'readme' => 'README.md', // which file to use as the readme for the version number
-                'access_token' => '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', // Access private repositories by authorizing under Plugins > GitHub Updates when this example plugin is installed
+                'access_token' => '', // Access private repositories by authorizing under Plugins > GitHub Updates when this example plugin is installed
             );
             new WP_GitHub_Updater($config);
         }
